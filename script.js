@@ -1,22 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
+    
     // --- EFECTO MOUSE (Sparkles) ---
     document.addEventListener('mousemove', (e) => {
-        // Creamos un destello
         const sparkle = document.createElement('div');
         sparkle.classList.add('sparkle');
         
-        // Posicionarlo donde está el mouse
         sparkle.style.left = e.pageX + 'px';
         sparkle.style.top = e.pageY + 'px';
         
-        // Tamaño aleatorio para variar
         const size = Math.random() * 5 + 2; 
         sparkle.style.width = size + 'px';
         sparkle.style.height = size + 'px';
         
         document.body.appendChild(sparkle);
 
-        // Eliminar del DOM después de la animación (1s)
         setTimeout(() => {
             sparkle.remove();
         }, 1000);
@@ -32,20 +29,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const playIcon = document.getElementById('play-icon');
     const progressBar = document.getElementById('progress-bar');
 
-    // --- 1. ENTRADA ---
-    enterBtn.addEventListener('click', () => {
-        enterScreen.style.opacity = '0';
-        setTimeout(() => {
-            enterScreen.style.display = 'none';
-            mainLayout.classList.remove('hidden-layout');
-            initTypewriter();
-            playMusic();
-        }, 800);
-    });
+    // --- 1. ENTRADA (Corregida) ---
+    if (enterBtn) {
+        enterBtn.addEventListener('click', () => {
+            enterScreen.style.opacity = '0';
+            setTimeout(() => {
+                enterScreen.style.display = 'none';
+                mainLayout.classList.remove('hidden-layout');
+                initTypewriter();
+                playMusic();
+            }, 800);
+        });
+    }
 
     // --- MAQUINA DE ESCRIBIR ---
     const welcomeMsg = "What are we made of, if not dreams? Of all kinds: those never realized, those within reach, those we strive to achieve, and above all, those we keep close to our hearts.";
     function initTypewriter() {
+        if(!typingText) return;
         let i = 0;
         typingText.innerHTML = "";
         function type() {
@@ -71,9 +71,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.closeModal = function(modalId) {
-        document.getElementById(modalId).classList.remove('active');
-        mainLayout.style.filter = "none";
-        mainLayout.style.transform = "scale(1)";
+        const modal = document.getElementById(modalId);
+        if(modal) {
+            modal.classList.remove('active');
+            mainLayout.style.filter = "none";
+            mainLayout.style.transform = "scale(1)";
+        }
     };
     
     window.onclick = (e) => {
@@ -90,14 +93,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const carouselTrack = document.getElementById('carousel-3d-track');
     let galleryIndex = 0; 
 
-    carouselTrack.innerHTML = "";
-    galleryImages.forEach((src, i) => {
-        const card = document.createElement('div');
-        card.className = 'card-3d-gold';
-        card.innerHTML = `<img src="${src}" alt="Img ${i}" style="width:100%;height:100%;object-fit:cover;">`;
-        card.onclick = () => { galleryIndex = i; updateGallery3D(); };
-        carouselTrack.appendChild(card);
-    });
+    if (carouselTrack) {
+        carouselTrack.innerHTML = "";
+        galleryImages.forEach((src, i) => {
+            const card = document.createElement('div');
+            card.className = 'card-3d-gold';
+            card.innerHTML = `<img src="${src}" alt="Img ${i}" style="width:100%;height:100%;object-fit:cover;">`;
+            card.onclick = () => { galleryIndex = i; updateGallery3D(); };
+            carouselTrack.appendChild(card);
+        });
+    }
 
     window.updateGallery3D = () => {
         const cards = document.querySelectorAll('#carousel-3d-track .card-3d-gold');
@@ -106,11 +111,15 @@ document.addEventListener('DOMContentLoaded', () => {
         cards.forEach(c => c.classList.remove('active'));
         if(cards[galleryIndex]) cards[galleryIndex].classList.add('active');
 
+        // Calculamos posiciones de forma segura
+        const container = document.querySelector('.gallery-container-3d');
+        if (!container) return;
+
         const fullCardWidth = cards[0].offsetWidth + 40; 
-        const containerWidth = carouselTrack.parentElement.offsetWidth;
+        const containerWidth = container.offsetWidth;
         const centerPosition = (containerWidth / 2) - (galleryIndex * fullCardWidth) - (fullCardWidth / 2) + 20;
 
-        carouselTrack.style.transform = `translateX(${centerPosition}px)`;
+        if(carouselTrack) carouselTrack.style.transform = `translateX(${centerPosition}px)`;
     };
 
     window.moveGallery = (dir) => {
@@ -127,27 +136,35 @@ document.addEventListener('DOMContentLoaded', () => {
     let sIdx = 0; let isPlaying = false; let pInt;
 
     function loadMusic(i) {
+        if(!audio) return;
         audio.src = playlist[i].src;
-        document.getElementById('song-title').innerText = playlist[i].title;
-        document.getElementById('song-artist').innerText = playlist[i].artist;
+        const t = document.getElementById('song-title');
+        const a = document.getElementById('song-artist');
+        if(t) t.innerText = playlist[i].title;
+        if(a) a.innerText = playlist[i].artist;
     }
     
     window.playMusic = () => {
+        if(!audio) return;
         audio.play().then(() => {
             isPlaying = true;
-            vinyl.classList.add('vinyl-spin');
-            playIcon.className = "fas fa-pause";
+            if(vinyl) vinyl.classList.add('vinyl-spin');
+            if(playIcon) playIcon.className = "fas fa-pause";
+            if(pInt) clearInterval(pInt);
             pInt = setInterval(() => {
-                progressBar.style.width = (audio.currentTime/audio.duration)*100 + "%";
+                if(progressBar && audio.duration) {
+                    progressBar.style.width = (audio.currentTime/audio.duration)*100 + "%";
+                }
             }, 100);
-        }).catch(() => {});
+        }).catch(() => {}); // Si falla (ej. sin interacción usuario), no hace nada
     };
     
     window.togglePlay = () => {
+        if(!audio) return;
         if(isPlaying) {
             audio.pause(); isPlaying = false;
-            vinyl.classList.remove('vinyl-spin');
-            playIcon.className = "fas fa-play";
+            if(vinyl) vinyl.classList.remove('vinyl-spin');
+            if(playIcon) playIcon.className = "fas fa-play";
             clearInterval(pInt);
         } else {
             playMusic();
@@ -156,15 +173,34 @@ document.addEventListener('DOMContentLoaded', () => {
     
     window.nextSong = () => { sIdx=(sIdx+1)%playlist.length; loadMusic(sIdx); playMusic(); };
     window.prevSong = () => { sIdx=(sIdx-1+playlist.length)%playlist.length; loadMusic(sIdx); playMusic(); };
+    
     loadMusic(0);
 
     window.addEventListener('resize', () => {
         updateGallery3D();
     });
 
-}
+    // --- 5. PROTECCIÓN (NUEVO) ---
+    // Bloquear Click Derecho
+    document.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    });
 
+    // Bloquear Teclas F12, Ctrl+U, etc
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'F12' || e.keyCode === 123) {
+            e.preventDefault();
+            return false;
+        }
+        if (e.ctrlKey && (e.key === 'U' || e.key === 'u')) {
+            e.preventDefault();
+            return false;
+        }
+        if (e.ctrlKey && e.shiftKey && 
+           (e.key === 'I' || e.key === 'J' || e.key === 'C' || e.key === 'i' || e.key === 'j' || e.key === 'c')) {
+            e.preventDefault();
+            return false;
+        }
+    });
 
-
-
-
+});
