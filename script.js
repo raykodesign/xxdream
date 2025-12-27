@@ -162,6 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateGallery3D();
     });
 
+}
 
 
 
